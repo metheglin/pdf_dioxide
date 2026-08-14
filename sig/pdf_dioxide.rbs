@@ -1,0 +1,31 @@
+module PdfDioxide
+  VERSION: String
+end
+
+module PdfDioxide
+  # All classes below are defined by the native extension
+  # (ext/pdf_dioxide/src/lib.rs).
+
+  class Error < StandardError
+  end
+
+  class IoError < Error
+  end
+
+  class ParseError < Error
+  end
+
+  class PasswordError < Error
+  end
+
+  class UnsupportedError < Error
+  end
+
+  class PdfDocument
+    def self.open: (String path) -> PdfDocument
+
+    def extract_text: (Integer page_index) -> String
+
+    def page_count: () -> Integer
+  end
+end

@@ -1,0 +1,28 @@
+[package]
+name = "pdf_dioxide"
+version = "0.1.0"
+edition = "2021"
+authors = ["metheglin <pigmybank@gmail.com>"]
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+magnus = { version = "0.8.2" }
+rb-sys = { version = "0.9", features = ["stable-api-compiled-fallback"] }
+# Core PDF engine. Points at the sibling working tree while the binding is
+# developed; switch to `pdf_oxide = "0.3"` (crates.io) before publishing a gem.
+pdf_oxide = { path = "../../../pdf_oxide", features = ["rendering", "signatures", "barcodes"] }
+# classify_page / extract_structured / extract_page_auto return their frozen
+# cross-binding JSON envelopes, same as the Python binding.
+serde_json = "1.0"
+# set_log_level / get_log_level gate the same global `log` filter pdf_oxide uses.
+log = "0.4"
+
+[build-dependencies]
+rb-sys-env = "0.2.2"
+
+[dev-dependencies]
+rb-sys-test-helpers = { version = "0.2.2" }
