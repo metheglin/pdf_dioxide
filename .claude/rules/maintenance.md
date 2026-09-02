@@ -11,9 +11,9 @@ The current implementation was ported from:
 
 | | |
 |---|---|
-| upstream crate version | `pdf_oxide 0.3.77` |
-| upstream commit | `f5e51316d2312b6f528b2a174f13a82d2c38696a` (2026-08-14) |
-| python.rs size at baseline | 8,629 lines |
+| upstream crate version | `pdf_oxide 0.3.77+main@3be1951` (tracking mode: unreleased main, 95 commits past v0.3.77) |
+| upstream commit | `3be1951b` (2026-08-23) — build tree is on fork branch `pdf_dioxide/3be1951b-fix1309` (see CHANGELOG 0.1.1) |
+| python.rs size at baseline | 8,637 lines |
 | dependency form | `path = "../../../pdf_oxide"` (sibling working tree) |
 | enabled features | `rendering`, `signatures`, `barcodes` (subset of upstream's `python` feature bundle) |
 
@@ -162,10 +162,13 @@ Check these first when a re-sync breaks the build:
 - Feature parity: this gem enables `rendering`, `signatures`, `barcodes`;
   upstream's `python` bundle also has `parallel`, `logging`, `tsa-client`,
   plus optional `ocr`. Revisit when porting the remaining CSV rows.
-- The dependency is a **path dep on the sibling working tree**. Before any
-  publish, switch `ext/pdf_dioxide/Cargo.toml` to a pinned crates.io
-  version (`pdf_oxide = "=X.Y.Z"`), and only bump it together with a
-  re-sync pass described above.
+- The dependency is a **path dep on the sibling working tree**, written as
+  an ABSOLUTE path so `rake install` works (an installed gem compiles its
+  extension inside the gem dir, where a relative path cannot reach the
+  checkout). This ties local installs to this machine. Before any publish,
+  switch `ext/pdf_dioxide/Cargo.toml` to a pinned crates.io version
+  (`pdf_oxide = "=X.Y.Z"`), and only bump it together with a re-sync pass
+  described above.
 
 ## Re-sync checklist
 

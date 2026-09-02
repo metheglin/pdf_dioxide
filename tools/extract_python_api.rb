@@ -117,7 +117,10 @@ DONE = {
 existing = {}
 if File.exist?(OUT)
   CSV.foreach(OUT, headers: true, encoding: "UTF-8") do |row|
-    existing[[row["container"], row["rust_name"]]] =
+    # `.to_s`: an empty container may round-trip as "" or nil depending on
+    # how the CSV was last written (quoted vs bare empty field); the merge
+    # key must not care.
+    existing[[row["container"].to_s, row["rust_name"].to_s]] =
       [row["ported"] == "true", row["tested"] == "true", row["comment"].to_s]
   end
 end
@@ -126,7 +129,7 @@ CSV.open(OUT, "w", encoding: "UTF-8") do |csv|
   csv << %w[kind container rust_name python_name python_rs_line ported tested comment]
   rows.sort_by { |r| r[4] }.each do |kind, container, rust_name, py_name, lineno|
     ported, tested = DONE.fetch([container, rust_name], [false, false])
-    old_ported, old_tested, comment = existing.fetch([container, rust_name], [false, false, ""])
+    old_ported, old_tested, comment = existing.fetch([container.to_s, rust_name.to_s], [false, false, ""])
     csv << [kind, container, rust_name, py_name, lineno,
             ported || old_ported, tested || old_tested, comment]
   end

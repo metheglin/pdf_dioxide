@@ -26,6 +26,20 @@ require "pdf_dioxide/pdf_dioxide"
 # naturally without native code (and without native-side GC bookkeeping for
 # the back-reference).
 module PdfDioxide
+  # One-stop version report for bug reports and CI logs: gem version,
+  # the pdf_oxide crate actually linked (UPSTREAM_VERSION, set natively),
+  # the python.rs parity baseline, Cargo features, and — only when
+  # `pdf_dioxide/ext` has been required — the Ext registry.
+  def self.version_info
+    {
+      gem: VERSION,
+      upstream_crate: UPSTREAM_VERSION,
+      parity: PARITY,
+      cargo_features: CARGO_FEATURES,
+      extensions: Ext.respond_to?(:features) ? Ext.features : []
+    }
+  end
+
   # Horizontal alignment values accepted by {Column} (python.rs's `Align`
   # int-enum pyclass, expressed as plain Ruby constants; `Column.new` also
   # accepts :left / :center / :right symbols).

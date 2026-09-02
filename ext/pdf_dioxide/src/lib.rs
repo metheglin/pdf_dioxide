@@ -21,6 +21,9 @@ use pdf_oxide::redaction::{RedactionOptions, RedactionReport};
 use pdf_oxide::rendering::RenderOptions;
 use pdf_oxide::{error::Error as PdfError, PdfDocument, ReadingOrder};
 
+// pdf_dioxide-only surface (see .claude/rules/extensions.md).
+mod ext;
+
 // ---------------------------------------------------------------------------
 // Exception hierarchy
 // ---------------------------------------------------------------------------
@@ -3049,6 +3052,11 @@ impl RbTextSpan {
     fn bbox(&self) -> (f32, f32, f32, f32) {
         bbox_tuple(&self.0.bbox)
     }
+    /// `bbox` with any text-matrix rotation resolved into an axis-aligned
+    /// page-space hull; identical to `bbox` for upright runs.
+    fn page_bbox(&self) -> (f32, f32, f32, f32) {
+        bbox_tuple(&self.0.page_bbox())
+    }
     fn font_name(&self) -> String {
         self.0.font_name.clone()
     }
@@ -3193,6 +3201,12 @@ impl Inner {
 struct RbPdfDocument(RefCell<Inner>);
 
 impl RbPdfDocument {
+    /// Run `f` against the parsed document. Used by the Ext surface, which
+    /// must not reach into `Inner` directly.
+    fn with_doc<R>(&self, f: impl FnOnce(&PdfDocument) -> R) -> R {
+        f(&self.0.borrow().doc)
+    }
+
     fn from_doc(doc: PdfDocument, path: Option<String>, raw_bytes: Option<Vec<u8>>) -> Self {
         RbPdfDocument(RefCell::new(Inner {
             doc,
@@ -5582,6 +5596,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     let text_span = module.define_class("TextSpan", ruby.class_object())?;
     text_span.define_method("text", method!(RbTextSpan::text, 0))?;
     text_span.define_method("bbox", method!(RbTextSpan::bbox, 0))?;
+    text_span.define_method("page_bbox", method!(RbTextSpan::page_bbox, 0))?;
     text_span.define_method("font_name", method!(RbTextSpan::font_name, 0))?;
     text_span.define_method("font_size", method!(RbTextSpan::font_size, 0))?;
     text_span.define_method("is_bold", method!(RbTextSpan::is_bold, 0))?;
@@ -6287,6 +6302,11 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     class.define_method("to_bytes", method!(RbPdfDocument::to_bytes, -1))?;
     class.define_method("save_encrypted", method!(RbPdfDocument::save_encrypted, -1))?;
     class.define_method("to_bytes_encrypted", method!(RbPdfDocument::to_bytes_encrypted, -1))?;
+
+    // Version drift detection: the pdf_oxide crate actually linked in.
+    module.const_set("UPSTREAM_VERSION", pdf_oxide::VERSION)?;
+
+    ext::init(ruby, module)?;
 
     Ok(())
 }
