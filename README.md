@@ -47,6 +47,20 @@ bundle exec rake test
 
 `rake` with no arguments runs `compile` then `test`.
 
+## Precompiled gem (no Rust on the target)
+
+`tools/cross_build.sh` builds a platform gem with [rb-sys-dock](https://github.com/oxidize-rb/rb-sys)
+(Docker), default target `aarch64-linux` with binaries for Ruby 3.4 and 4.0:
+
+```bash
+tools/cross_build.sh                                   # -> pkg/pdf_dioxide-<ver>-aarch64-linux.gem
+tools/verify_native_gem.sh pkg/pdf_dioxide-*-aarch64-linux.gem   # installs it in a Rust-less ruby:4.0 arm64 container
+```
+
+The resulting gem has no `extensions`, so `gem install` on the target needs
+no Rust toolchain. The loader picks `lib/pdf_dioxide/<major.minor>/` per
+Ruby version. See the script header for the mount/version caveats.
+
 ## Usage
 
 ```ruby

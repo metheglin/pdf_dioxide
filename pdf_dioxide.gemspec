@@ -29,10 +29,22 @@ Gem::Specification.new do |spec|
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
   gemspec = File.basename(__FILE__)
+  excluded = ->(f) { (f == gemspec) || f.start_with?(*%w[bin/ Gemfile .gitignore test/ tools/ .claude/]) }
   spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
-    ls.readlines("\x0", chomp: true).reject do |f|
-      (f == gemspec) ||
-        f.start_with?(*%w[bin/ Gemfile .gitignore test/ tools/ .claude/])
+    ls.readlines("\x0", chomp: true).reject(&excluded)
+  end
+  if spec.files.empty?
+    # `git ls-files` yields nothing when git refuses the repo — e.g. inside a
+    # rb-sys-dock cross-build container the bind-mounted checkout trips
+    # git's "dubious ownership" check. Fall back to an explicit glob that
+    # mirrors the tracked layout (compiled artifacts stay excluded;
+    # rake-compiler adds the cross-built .so itself).
+    warn "pdf_dioxide.gemspec: git ls-files returned nothing, using glob fallback"
+    spec.files = Dir.chdir(__dir__) do
+      Dir.glob(%w[
+        lib/**/*.rb sig/**/*.rbs ext/**/*.{rs,rb,toml} Cargo.toml Cargo.lock
+        Rakefile README.md CHANGELOG.md LICENSE.txt
+      ]).reject(&excluded)
     end
   end
   spec.bindir = "exe"

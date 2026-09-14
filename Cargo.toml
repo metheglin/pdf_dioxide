@@ -7,7 +7,9 @@ members = ["./ext/pdf_dioxide"]
 resolver = "2"
 
 [profile.release]
-# By default, debug symbols are stripped from the final binary which makes it
-# harder to debug if something goes wrong. It's recommended to keep debug
-# symbols in the release build so that you can debug the final binary if needed.
-debug = true
+# The `bundle gem --ext=rust` scaffold keeps full debug info in release builds;
+# with pdf_oxide's ~1000-crate dependency tree that made each native .so ~100 MB
+# (a two-Ruby-version cross gem was 227 MB). Drop debuginfo but keep the symbol
+# table so panic backtraces still show function names.
+debug = false
+strip = "debuginfo"

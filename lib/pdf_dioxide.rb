@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
 require_relative "pdf_dioxide/version"
-require "pdf_dioxide/pdf_dioxide"
+# Precompiled (native) gems ship one binary per Ruby minor version under
+# lib/pdf_dioxide/<major.minor>/ (rake-compiler layout); source builds put it
+# directly in lib/pdf_dioxide/. Try the versioned path first.
+begin
+  require "pdf_dioxide/#{RUBY_VERSION[/\d+\.\d+/]}/pdf_dioxide"
+rescue LoadError
+  require "pdf_dioxide/pdf_dioxide"
+end
 
 # Single gem namespace (RubyGems convention: gem name pdf_dioxide <->
 # constant PdfDioxide): VERSION lives in version.rb, the native extension
