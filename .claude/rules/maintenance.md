@@ -11,9 +11,9 @@ The current implementation was ported from:
 
 | | |
 |---|---|
-| upstream crate version | `pdf_oxide 0.3.77+main@3be1951` (tracking mode: unreleased main, 95 commits past v0.3.77) |
-| upstream commit | `3be1951b` (2026-08-23) — build tree is on fork branch `pdf_dioxide/3be1951b-fix1309` (see CHANGELOG 0.1.1) |
-| python.rs size at baseline | 8,637 lines |
+| upstream crate version | `pdf_oxide 0.3.78` (release tag; the build tree carries one local patch, so `UPSTREAM_VERSION` reads `0.3.78+fixtrailer` — see CHANGELOG 0.1.2) |
+| upstream commit | `ad49c4cb` (2026-09-08, tag `v0.3.78`) — build tree is on fork branch `pdf_dioxide/ad49c4cb-fixtrailer` |
+| python.rs size at baseline | 8,659 lines |
 | dependency form | `path = "../../../pdf_oxide"` (sibling working tree) |
 | enabled features | `rendering`, `signatures`, `barcodes` (subset of upstream's `python` feature bundle) |
 
@@ -159,6 +159,11 @@ Check these first when a re-sync breaks the build:
   compile silently; re-check them on each sync.
 - `compliance` submodules are private; only the `pdf_oxide::compliance::*`
   re-exports are usable.
+- `content::Operator` is a plain (not `#[non_exhaustive]`) enum and
+  `ext.rs`'s `operator_to_ruby` matches it exhaustively, so a new upstream
+  operator breaks `cargo check` with "non-exhaustive patterns". That is the
+  intended failure: add the arm with the PDF mnemonic from
+  `content/parser.rs` (0.3.78 added `CloseAndStroke` -> `"s"`).
 - Feature parity: this gem enables `rendering`, `signatures`, `barcodes`;
   upstream's `python` bundle also has `parallel`, `logging`, `tsa-client`,
   plus optional `ocr`. Revisit when porting the remaining CSV rows.

@@ -1,14 +1,16 @@
 # frozen_string_literal: true
 
 module PdfDioxide
-  # Tracking mode (see .claude/rules/versioning.md): the 0.1.x series means
-  # "built against upstream main, not tied to a release". Switches to the
-  # four-segment <upstream>.<build> scheme when the gem enters pinned mode.
-  VERSION = "0.1.1"
+  # Pinned mode (see .claude/rules/versioning.md): <upstream pdf_oxide
+  # release>.<pdf_dioxide build>. The first three segments are the python.rs
+  # release the parity surface tracks; the fourth counts pdf_dioxide-only
+  # changes and resets to 0 on every re-sync.
+  VERSION = "0.3.78.0"
 
-  # The upstream commit this build was reconciled against (unreleased main;
-  # the version part is the crate version at that commit).
-  PARITY = { version: "0.3.77+main@3be1951", commit: "3be1951b171edb9d69a10f42ef72ee73f52e51bf" }.freeze
+  # The python.rs baseline the parity surface was ported from (the v0.3.78
+  # tag). The build tree carries one local patch on top, which
+  # UPSTREAM_VERSION reports as "0.3.78+fixtrailer" (see CHANGELOG 0.3.78.0).
+  PARITY = { version: "0.3.78", commit: "ad49c4cb3638dc950a29350ef882161372fde473" }.freeze
 
   # Cargo features the extension is built with (mirror of
   # ext/pdf_dioxide/Cargo.toml; keep in sync by hand).

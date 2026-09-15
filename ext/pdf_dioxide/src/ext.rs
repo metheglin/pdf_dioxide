@@ -266,6 +266,7 @@ fn operator_to_ruby(ruby: &Ruby, op: &Operator) -> Result<RArray, Error> {
             height,
         } => op!("re", *x, *y, *width, *height),
         Stroke => op!("S"),
+        CloseAndStroke => op!("s"),
         Fill => op!("f"),
         FillEvenOdd => op!("f*"),
         CloseFillStroke => op!("b"),
@@ -427,25 +428,6 @@ fn stream_data(ruby: &Ruby, rb_self: Value, obj_ref: Value) -> Result<RString, E
     })
 }
 
-/// EXT: `doc.experimental_render_page(page, **render_page kwargs)
-/// #=> String (binary image)` — identical to the parity `render_page`
-/// except `RenderOptions::resolve_form_resources` is enabled: pdf_dioxide's
-/// opt-in fix for upstream #1309 (text inside a Form XObject whose
-/// `/Resources` is an indirect reference was not drawn). Requires the
-/// patched upstream build (`UPSTREAM_VERSION` ends in `+fix1309`).
-/// Graduates into `render_page` once upstream merges the fix.
-fn experimental_render_page(ruby: &Ruby, rb_self: Value, args: &[Value]) -> Result<RString, Error> {
-    let args = scan_args::<(usize,), (), (), (), RHash, ()>(args)?;
-    let (page,) = args.required;
-    let mut options = crate::render_options_from_kwargs(ruby, args.keywords, Some(72))?;
-    options.resolve_form_resources = true;
-    with_doc(rb_self, |doc| {
-        pdf_oxide::rendering::render_page(doc, page, &options)
-            .map(|img| ruby.str_from_slice(&img.data))
-            .map_err(|e| map_pdf_error(ruby, e))
-    })
-}
-
 /// Register the Ext surface: `PdfDioxide::Ext`, its value classes and the
 /// per-class mixin modules. Attachment to the parity classes happens in
 /// Ruby (`require "pdf_dioxide/ext"`), never here.
@@ -476,9 +458,5 @@ pub(crate) fn init(ruby: &Ruby, module: RModule) -> Result<(), Error> {
     document.define_method("form_xobject?", method!(form_xobject, 1))?;
     document.define_method("page_content", method!(page_content, 1))?;
     document.define_method("stream_data", method!(stream_data, 1))?;
-    document.define_method(
-        "experimental_render_page",
-        method!(experimental_render_page, -1),
-    )?;
     Ok(())
 }

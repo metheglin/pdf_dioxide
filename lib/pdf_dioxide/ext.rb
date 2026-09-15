@@ -60,14 +60,27 @@ module PdfDioxide
       { name: :stream_data, kind: :method, attach: :include,
         rust_api: "PdfDocument::load_object + Object::decode_stream_data", since: "0.1.1",
         upstream_issue: "not yet filed", status: :extension, graduated_in_upstream: nil },
-      # Exception build: needs the patched upstream (UPSTREAM_VERSION "+fix1309").
+      # GRADUATED in upstream 0.3.78: render_page resolves an indirect
+      # /Resources itself, so the fork patch and this method are obsolete.
+      # Deprecating shim; delete one minor release after 0.1.2.
       { name: :experimental_render_page, kind: :method, attach: :include,
-        rust_api: "rendering::render_page with RenderOptions::resolve_form_resources (fork patch)",
+        rust_api: "(shim) delegates to the parity PdfDocument#render_page",
         since: "0.1.1", upstream_issue: "https://github.com/yfedoseev/pdf_oxide/issues/1309",
-        status: :extension, graduated_in_upstream: nil }
+        status: :graduated, graduated_in_upstream: "0.3.78" }
     ].freeze
 
     def self.features = FEATURES
+
+    # One deprecation notice per process per graduated name.
+    def self.warn_graduated(old_name, parity_name)
+      @warned ||= {}
+      return if @warned[old_name]
+
+      @warned[old_name] = true
+      warn "PdfDioxide::Ext##{old_name} has graduated into the parity API: " \
+           "use PdfDioxide::PdfDocument##{parity_name} instead. " \
+           "The shim will be removed in a later release."
+    end
 
     # Value semantics so refs work as Hash keys / in Sets (visited tracking).
     class ObjectRef
@@ -82,6 +95,14 @@ module PdfDioxide
       # `doc.resolve(page["Resources"])` works whether Resources is inline or
       # a reference.
       def resolve(obj) = obj.is_a?(ObjectRef) ? load_object(obj) : obj
+
+      # Deprecated: upstream 0.3.78 fixed the Form XObject /Resources bug
+      # (issue #1309) in `render_page` itself, so this is now a plain
+      # delegation kept for one release.
+      def experimental_render_page(page, **opts)
+        Ext.warn_graduated(:experimental_render_page, :render_page)
+        render_page(page, **opts)
+      end
     end
   end
 

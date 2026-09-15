@@ -1497,6 +1497,21 @@ struct RbLineCap(pdf_oxide::writer::LineCap);
 #[derive(Clone)]
 struct RbLineJoin(pdf_oxide::writer::LineJoin);
 
+impl RbLineCap {
+    /// Tells a value read back from the editor's settings apart in a REPL
+    /// (upstream's `LineCap.__repr__`).
+    fn inspect(&self) -> String {
+        format!("#<PdfDioxide::LineCap {:?}>", self.0)
+    }
+}
+
+impl RbLineJoin {
+    /// See `RbLineCap::inspect` (upstream's `LineJoin.__repr__`).
+    fn inspect(&self) -> String {
+        format!("#<PdfDioxide::LineJoin {:?}>", self.0)
+    }
+}
+
 /// `PdfDioxide::PatternPresets` — static generators returning raw pattern
 /// content-stream bytes as binary Strings.
 #[magnus::wrap(class = "PdfDioxide::PatternPresets", free_immediately, size)]
@@ -5756,6 +5771,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         line_cap.define_singleton_method("round", function!(|| RbLineCap(LC::Round), 0))?;
         line_cap.define_singleton_method("square", function!(|| RbLineCap(LC::Square), 0))?;
     }
+    line_cap.define_method("inspect", method!(RbLineCap::inspect, 0))?;
 
     let line_join = module.define_class("LineJoin", ruby.class_object())?;
     {
@@ -5764,6 +5780,7 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
         line_join.define_singleton_method("round", function!(|| RbLineJoin(LJ::Round), 0))?;
         line_join.define_singleton_method("bevel", function!(|| RbLineJoin(LJ::Bevel), 0))?;
     }
+    line_join.define_method("inspect", method!(RbLineJoin::inspect, 0))?;
 
     let pattern_presets = module.define_class("PatternPresets", ruby.class_object())?;
     pattern_presets.define_singleton_method(
