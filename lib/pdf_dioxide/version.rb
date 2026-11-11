@@ -5,11 +5,16 @@ module PdfDioxide
   # release>.<pdf_dioxide build>. The first three segments are the python.rs
   # release the parity surface tracks; the fourth counts pdf_dioxide-only
   # changes and resets to 0 on every re-sync.
-  VERSION = "0.3.78.0"
+  #
+  # A trailing ".fixNNNN" segment marks an exception build (patched upstream):
+  # RubyGems treats it as a prerelease, so it sorts below the plain build
+  # number and Bundler never selects it unless it is pinned explicitly.
+  VERSION = "0.3.78.1.fix20261111"
 
   # The python.rs baseline the parity surface was ported from (the v0.3.78
-  # tag). The build tree carries one local patch on top, which
-  # UPSTREAM_VERSION reports as "0.3.78+fixtrailer" (see CHANGELOG 0.3.78.0).
+  # tag). The build tree carries local patches on top, which UPSTREAM_VERSION
+  # reports as "0.3.78+fixtrailer.fix20261111" (see CHANGELOG
+  # 0.3.78.1.fix20261111).
   PARITY = { version: "0.3.78", commit: "ad49c4cb3638dc950a29350ef882161372fde473" }.freeze
 
   # Cargo features the extension is built with (mirror of

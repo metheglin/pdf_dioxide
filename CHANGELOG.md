@@ -4,6 +4,63 @@ Version scheme: `<upstream pdf_oxide version>.<pdf_dioxide build>`
 (`.claude/rules/versioning.md`). Every fourth-segment bump gets an entry here;
 breaking changes to the wrapper or the Ext surface are called out explicitly.
 
+## 0.3.78.1.fix20261111
+
+**Exception build (patched upstream), prerelease.** Four image defects in
+pdf_oxide 0.3.78 are fixed in the build tree ahead of upstream's 0.3.79. No API
+change: same parity surface, same Ext surface as 0.3.78.0. Parity baseline is
+unchanged (pdf_oxide **0.3.78**, tag `ad49c4cb`).
+
+### What changes for callers
+
+| | before (0.3.78.0) | now |
+|---|---|---|
+| Flate image whose `/DecodeParms` `BitsPerComponent` is not 8 (PNG predictor), incl. 16-bit images | decoded as horizontal colour noise, no error | decoded correctly |
+| Image with `/ColorSpace [/DeviceRGB]` (also `[/DeviceGray]`, `[/DeviceCMYK]`) | missing from `render_page` and `extract_images` | rendered and extracted |
+| Stencil mask (`/ImageMask true`) | rendered, but `extract_images` returned nothing | also returned by `extract_images`, as a 1-bit gray image (painted samples black) |
+| 1-bit `/Indexed` image with `/CCITTFaxDecode` | missing from `render_page` (blank page) and `extract_images` | rendered and extracted |
+
+The third row is the only one that changes a result that was not simply
+broken: **`extract_images` (and everything built on it) now returns more
+images on pages that carry stencil masks** — typically scanned pages stored as
+one full-page CCITT stencil, which used to look like pages with no image.
+`render_page` output is unchanged for stencils.
+
+### Exception build — expires at the next sync
+
+- Fork branch (own fork `metheglin/pdf_oxide`): `pdf_dioxide/ad49c4cb-fixtrailer`
+  at `a5c97488`, i.e. the `v0.3.78` tag + the trailer patch of 0.1.2 + one
+  commit per patch below + a version-metadata commit. Crate version
+  `0.3.78+fixtrailer.fix20261111`, visible as `PdfDioxide::UPSTREAM_VERSION`.
+- Patches and their upstream issues (all four are fixed upstream on the
+  unreleased 0.3.79 branch, which is not public yet):
+
+  | patch | file | upstream issue |
+  |---|---|---|
+  | PNG predictor steps back one whole pixel, `ceil(Colors x BitsPerComponent / 8)` bytes | `src/decoders/predictor.rs` | https://github.com/yfedoseev/pdf_oxide/issues/2243 |
+  | one-element device colour space array reads as the bare name | `src/extractors/images.rs` (`parse_color_space`) | https://github.com/yfedoseev/pdf_oxide/issues/3099 |
+  | a stencil mask lists as a 1-bit gray image where a page's images are listed | `src/extractors/images.rs` (`stencil_mask_as_gray_image`), `src/document.rs` | https://github.com/yfedoseev/pdf_oxide/issues/3100 |
+  | an Indexed fax image is decoded before the palette lookup | `src/extractors/images.rs` | https://github.com/yfedoseev/pdf_oxide/issues/3101 |
+
+- Deviations from `.claude/rules/versioning.md`:
+  - **Not opt-in.** Like the trailer patch, these are decoder / parser
+    corrections with no meaningful "decode it wrongly" mode and no Ext method
+    to gate them behind, so they are unconditional. Inputs that already decoded
+    correctly are unaffected (8-bit predictors, bare-name colour spaces,
+    unfiltered Indexed images, CCITT DeviceGray images: each has a regression
+    test in the fork). The stencil change is the one behavioural addition; it
+    matches what upstream ships in 0.3.79.
+  - **One branch, several patches.** The rule asks for "base + one patch" per
+    branch, but the gem builds from a single tree, so the four commits are
+    stacked on the existing `-fixtrailer` branch. They are dropped together at
+    the next sync.
+- Pinning: a prerelease is never picked by `~> 0.3.78`. Consumers pin it
+  explicitly: `gem "pdf_dioxide", "0.3.78.1.fix20261111"`.
+- Expiry: at the sync to pdf_oxide 0.3.79 the four image patches are expected
+  to be redundant. Start from the unpatched tag and re-declare only what
+  upstream still lacks (the trailer patch has no upstream issue yet, so check
+  it separately).
+
 ## 0.3.78.0
 
 **Switched to pinned mode.** The sibling checkout now sits on the `v0.3.78`
