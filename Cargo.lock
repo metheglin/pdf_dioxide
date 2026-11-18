@@ -1807,7 +1807,7 @@ dependencies = [
 
 [[package]]
 name = "pdf_oxide"
-version = "0.3.78+fixtrailer.fix20261111"
+version = "0.3.78+fixtrailer.fix20261118"
 dependencies = [
  "aes",
  "barcoders",

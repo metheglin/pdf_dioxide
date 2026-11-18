@@ -4,6 +4,67 @@ Version scheme: `<upstream pdf_oxide version>.<pdf_dioxide build>`
 (`.claude/rules/versioning.md`). Every fourth-segment bump gets an entry here;
 breaking changes to the wrapper or the Ext surface are called out explicitly.
 
+## 0.3.78.2.fix20261118
+
+**Exception build (patched upstream), prerelease.** Non-embedded Japanese
+fonts: three defects of pdf_oxide 0.3.78 in rendering, one of them also in
+text extraction, are fixed in the build tree ahead of upstream's 0.3.79. No
+API change: same parity surface, same Ext surface. Parity baseline is
+unchanged (pdf_oxide **0.3.78**, tag `ad49c4cb`). Everything in
+0.3.78.1.fix20261111 is still in.
+
+### What changes for callers
+
+| | before (0.3.78.1.fix20261111) | now |
+|---|---|---|
+| Half-width Latin letters, digits and symbols in a non-embedded Japanese font (Identity-H, no `/ToUnicode`) | **text**: Latin-1 / Latin Extended junk ("Cocon" as `ĊĶĪĶĵ`); **render**: missing or junk | correct in both |
+| Ideographs the CID table mapped to a radical form (示, 長, 民, 戸, 青, ...) in such a font | **text**: a radical code or another character ("長" as U+2ED1, "民" as "工"); **render**: missing where the fallback font has no radical forms | correct in both |
+| Digits and Latin text in a non-embedded font under `UniJIS-UCS2-H`, `90ms-RKSJ-H` and the other Japanese predefined CMaps | **render**: laid out at the full-width advance, overlapping what follows | **render**: at the font's own widths |
+| A character neither the chosen font nor the CJK fallback has (Latin, digits, bullets, circled numbers where Droid Sans Fallback is the only CJK font) | **render**: nothing | **render**: taken from another installed font, if one has it |
+| A character painted from a fallback font | **render**: advanced by the fallback font's width | **render**: advanced by the PDF font's width |
+
+- **`extract_text` and everything built on it change** on pages that use a
+  non-embedded Identity-H Adobe-Japan1 font: junk becomes text, radical forms
+  become ideographs. Pages without such fonts extract exactly as before.
+- **`render_page` changes** on pages with non-embedded Japanese fonts. Other
+  pages render byte-identically.
+- Rendering still depends on the fonts installed on the host. A font name
+  pdf_oxide looks for must be present (DejaVu Sans, Liberation Sans, Arial,
+  Noto Sans, ...): without one, text is still drawn as filled rectangles. A
+  character no installed font has is still not drawn (circled 11-20 need a
+  font such as IPA Gothic).
+
+### Exception build — expires at the next sync
+
+- Fork branch (own fork `metheglin/pdf_oxide`): `pdf_dioxide/ad49c4cb-fixtrailer`
+  at `0c09e786`: the tree of 0.3.78.1.fix20261111 (`a5c97488`) + one commit per
+  patch below + a version-metadata commit. Crate version
+  `0.3.78+fixtrailer.fix20261118`, visible as `PdfDioxide::UPSTREAM_VERSION`.
+- Patches and their upstream issues:
+
+  | patch | file | upstream |
+  |---|---|---|
+  | Adobe-Japan1 CID table completed from Adobe's `Adobe-Japan1-UCS2`: 6,458 missing CIDs added, 266 radical-form entries corrected; other existing entries untouched | `src/fonts/cid_mappings/adobe_japan1.rs` | https://github.com/yfedoseev/pdf_oxide/issues/2189, https://github.com/yfedoseev/pdf_oxide/issues/1060 (fixed on the unreleased 0.3.79 branch) |
+  | the 22 Adobe-Japan1 predefined CMaps bundled as code-to-CID tables; the renderer reads `/W` at that CID | `src/fonts/predefined_cmap.rs` (new), `src/fonts/font_dict.rs` (`painted_glyph_width`) | https://github.com/yfedoseev/pdf_oxide/issues/1626 (fixed on the unreleased 0.3.79 branch) |
+  | a missing glyph is taken from any face of the font database; a fallback glyph advances by the PDF width | `src/rendering/text_rasterizer.rs` | not yet filed |
+
+  The two generated files come from `tools/gen_japan1_cid_table.py` and
+  `tools/gen_predefined_cmaps.py` in this repository.
+- Deviations from `.claude/rules/versioning.md`:
+  - **Not opt-in**, for the same reason as before: these are table and layout
+    corrections with no meaningful wrong mode to keep.
+  - **One branch, several patches**, stacked on the 0.3.78.1.fix20261111 tree.
+  - **Narrower than upstream on purpose.** Upstream 0.3.79 applies the
+    predefined-CMap widths to text extraction too and regenerates the whole CID
+    table. Here the widths reach the renderer only, and existing CID entries
+    other than radical forms are kept, so that text which extracts correctly
+    today does not move. Expect further extraction changes at the 0.3.79 sync.
+- Third-party data: both tables derive from Adobe's CMap resources
+  (BSD-3-Clause). The notice is in the fork's `NOTICE` and in this gem's README.
+- Pinning: `gem "pdf_dioxide", "0.3.78.2.fix20261118"`.
+- Expiry: at the sync to pdf_oxide 0.3.79 the first two patches are expected to
+  be redundant; check the third against upstream before re-declaring it.
+
 ## 0.3.78.1.fix20261111
 
 **Exception build (patched upstream), prerelease.** Four image defects in
